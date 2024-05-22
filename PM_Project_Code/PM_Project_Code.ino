@@ -3,8 +3,8 @@
 #include <Keypad.h>
 #include <SD.h>
 #include <SPI.h>
-#include<ShiftOutX.h>
-#include<ShiftPinNo.h>
+#include <ShiftOutX.h>
+#include <ShiftPinNo.h>
 
 int serialData = A1;
 int shiftClock = A2;
@@ -20,7 +20,6 @@ int buzzer = 9;
 // Chip select pin for SD card module
 const int chipSelectPin = 10;
 const char* answerlist = "answords.txt";
-const char* records = "recordsFile.txt";
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -64,18 +63,19 @@ const char* letterMap[] = {
 
 
 File myFile;
+
 void setup()
 {
-   // TODO de pus timere ca in lab 3
-  DDRC |= (1 << SERIAL_DATA_PIN);   // Set PC1 (A1) as output
-  DDRC |= (1 << SHIFT_CLOCK_PIN);   // Set PC2 (A2) as output
-  DDRC |= (1 << LATCH_CLOCK_PIN);   // Set PC3 (A3) as output
-  DDRB |= (1 << BUZZER_PIN);        // Set PB1 (Digital 9) as output
-  PORTB &= ~(1 << BUZZER_PIN);  // Set PB1 (Digital 9) to LOW
+  DDRC |= (1 << SERIAL_DATA_PIN);
+  DDRC |= (1 << SHIFT_CLOCK_PIN);
+  DDRC |= (1 << LATCH_CLOCK_PIN);
+  DDRB |= (1 << BUZZER_PIN);
+  PORTB &= ~(1 << BUZZER_PIN);
   changeLeds(leds);
 
   lcd.init();         // initialize the lcd
-  lcd.backlight();    // Turn on the LCD screen backlight
+  lcd.backlight();
+
   // Initialize random seed with a different value each time
   randomSeed(analogRead(0));
 
@@ -120,9 +120,10 @@ void loop()
     beepWrong();
 }
 
-// Function to create a delay of a specified number of seconds using Timer1
-void delayTimer(unsigned int seconds) {
-  for (unsigned int i = 0; i < seconds; i++) {
+// Function to create a delay of a specified number of tenthOfSeconds using Timer1
+// (1 tenthOfSeconds = 0.1 seconds)
+void delayTimer(unsigned int tenthOfSeconds) {
+  for (unsigned int i = 0; i < tenthOfSeconds; i++) {
     // Wait for the compare match flag to be set
     while (!(TIFR1 & (1 << OCF1A)));
 
@@ -231,7 +232,7 @@ void guessWord() {
     Serial.println("Initialization failed!");
     while (1);
   }
-  Serial.println("Initialization done.");
+
   String wordToGuess = chooseRandomWord();
   wordToGuess.trim();
   wordToGuess.toUpperCase();
@@ -434,15 +435,16 @@ void guessNumber() {
           continue;       
         }
       }
-      beepPress();
 
       if (!checkIfDigitInNumber(keyPressed - '0', userGuess)) {
+        beepPress();
         lcd.setCursor(2 + digitsEntered, 1);
         lcd.print(keyPressed);
         userGuess = userGuess * 10 + (keyPressed - '0');
 
         digitsEntered++;
-      } 
+      } else
+        beepWrong();
     } else if (keyPressed != NO_KEY)
       beepWrong();
   }
@@ -470,7 +472,7 @@ void lightShow() {
   leds = 0b1111111111111110;
   changeLeds(leds);
   for (int i = 0; i < 10; i++) {
-    int nrLed = i % 5; // This will cycle through 0 to 4
+    int nrLed = i % 5;
     
     // Turn off all LEDs
     leds = 0b1111111111111110;
@@ -508,21 +510,19 @@ void lightShow() {
 
     switch (i % 3) {
         case 0:
-            // First pattern: Red on even LEDs, Green on odd LEDs
-            makeRed(0);
-            makeGreen(1);
-            makeRed(2);
-            makeGreen(3);
-            makeRed(4);
+            // First pattern: Green on even LEDs, Red on odd LEDs
+            makeGreen(0);
+            makeRed(1);
+            makeGreen(2);
+            makeRed(3);
+            makeGreen(4);
             break;
         case 1:
             // Second pattern: Blue on even LEDs, Yellow on odd LEDs
             makeBlue(0);
-            makeRed(1);
-            makeGreen(1); // Yellow
+            makeYellow(1);
             makeBlue(2);
-            makeRed(3);
-            makeGreen(3); // Yellow
+            makeYellow(3);
             makeBlue(4);
             break;
         case 2:
