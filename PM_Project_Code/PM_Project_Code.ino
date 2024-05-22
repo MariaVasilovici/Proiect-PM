@@ -46,7 +46,7 @@ int nrOfGuesses;
 bool soundOff = false;
 
 shiftOutX reg(latchClock, serialData, shiftClock, LSBFIRST, 2);
-unsigned long leds = 0b1111111111000000;
+unsigned long leds = 0b1111111111111110;
 
 // Mapping of numbers to letters
 const char* letterMap[] = {
@@ -143,11 +143,21 @@ void changeLeds(unsigned long newLeds) {
 }
 
 void makeGreen(int nrLed) {
-  leds &= ~(1UL << (14 - nrLed * 2));
+  leds &= ~(1UL << (14 - nrLed * 3));
 }
 
 void makeRed(int nrLed) {
-  leds &= ~(1UL << (15 - nrLed * 2));
+  leds &= ~(1UL << (15 - nrLed * 3));
+}
+
+void makeBlue(int nrLed) {
+  leds &= ~(1UL << (13 - nrLed * 3));
+}
+
+void turnOff(int nrLed) {
+  leds |= (1UL << (13 - nrLed * 3));
+  leds |= (1UL << (14 - nrLed * 3));
+  leds |= (1UL << (15 - nrLed * 3));
 }
 
 void makeYellow(int nrLed) {
@@ -241,7 +251,7 @@ void guessWord() {
     copy.toLowerCase();
     if (!checkWord(copy)) {
       unsigned long tempLeds = leds;
-      leds = 0b1111111111000000;
+      leds = 0b1111111111111110;
       for (int i = 0; i < 5; i++)
         makeRed(i);
   
@@ -255,7 +265,7 @@ void guessWord() {
 
     nrOfGuesses++;
     lcd.clear();
-    leds = 0b1111111111000000;
+    leds = 0b1111111111111110;
     String tempWord = word;
     String tempWTG = wordToGuess;
     for (int i = 0; i < 5; i++) {
@@ -288,13 +298,13 @@ void guessWord() {
     }
   }
 
-  leds = 0b1111111111000000;
+  leds = 0b1111111111111110;
   for (int i = 0; i < 5; i++) 
     makeGreen(i);
   changeLeds(leds);
 
   nrOfGuesses++;
-  winScreen(true);
+  winScreen();
 }
 
 void loseScreen(String wordToGuess) {
@@ -307,7 +317,7 @@ void loseScreen(String wordToGuess) {
   lcd.setCursor(10, 1);
   lcd.print(wordToGuess);
   delayTimer(50);
-  leds = 0b1111111111000000;
+  leds = 0b1111111111111110;
   changeLeds(leds);
   startScreen();
 }
@@ -436,10 +446,10 @@ void guessNumber() {
     } else if (keyPressed != NO_KEY)
       beepWrong();
   }
-  winScreen(false);
+  winScreen();
 }
 
-void winScreen(bool wordGame) {
+void winScreen() {
   lcd.clear();
   lcd.setCursor(1, 0);
   lcd.print("Congrats!");
@@ -450,11 +460,94 @@ void winScreen(bool wordGame) {
   else
     lcd.setCursor(4, 1);
   lcd.print("Guesses");
-  delayTimer(50);
-  leds = 0b1111111111000000;
-  changeLeds(leds);
+  
+  lightShow();
 
   startScreen();
+}
+
+void lightShow() {
+  leds = 0b1111111111111110;
+  changeLeds(leds);
+  for (int i = 0; i < 10; i++) {
+    int nrLed = i % 5; // This will cycle through 0 to 4
+    
+    // Turn off all LEDs
+    leds = 0b1111111111111110;
+
+    switch (i % 6) {
+      case 0:
+        makeRed(nrLed);
+        break;
+      case 1:
+        makeRed(nrLed);
+        makeGreen(nrLed); // Yellow
+        break;
+      case 2:
+        makeGreen(nrLed);
+        break;
+      case 3:
+        makeGreen(nrLed);
+        makeBlue(nrLed); // Cyan
+        break;
+      case 4:
+        makeBlue(nrLed);
+        break;
+      case 5:
+        makeRed(nrLed);
+        makeBlue(nrLed); // Purple
+        break;
+    }
+    changeLeds(leds);    
+    delayTimer(2);
+  }
+
+  for (int i = 0; i < 20; i++) {
+    // Turn off all LEDs
+    leds = 0b1111111111111110;
+
+    switch (i % 3) {
+        case 0:
+            // First pattern: Red on even LEDs, Green on odd LEDs
+            makeRed(0);
+            makeGreen(1);
+            makeRed(2);
+            makeGreen(3);
+            makeRed(4);
+            break;
+        case 1:
+            // Second pattern: Blue on even LEDs, Yellow on odd LEDs
+            makeBlue(0);
+            makeRed(1);
+            makeGreen(1); // Yellow
+            makeBlue(2);
+            makeRed(3);
+            makeGreen(3); // Yellow
+            makeBlue(4);
+            break;
+        case 2:
+            // Third pattern: Cyan on even LEDs, Purple on odd LEDs
+            makeGreen(0);
+            makeBlue(0); // Cyan
+            makeRed(1);
+            makeBlue(1); // Purple
+            makeGreen(2);
+            makeBlue(2); // Cyan
+            makeRed(3);
+            makeBlue(3); // Purple
+            makeGreen(4);
+            makeBlue(4); // Cyan
+            break;
+    }
+
+    // Apply the changes
+    changeLeds(leds);
+
+    // Wait for a short time before the next change
+    delayTimer(2);
+    }
+  leds = 0b1111111111111110;
+  changeLeds(leds);
 }
 
 void startScreen() {
